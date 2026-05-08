@@ -89,13 +89,11 @@ services:
     restart: unless-stopped
 
   prometheus:
-    ports: !reset []
-    expose: ["9090"]
+    ports: !override ["127.0.0.1:9090:9090"]
     restart: unless-stopped
 
   grafana:
-    ports: !reset []
-    expose: ["3000"]
+    ports: !override ["127.0.0.1:3000:3000"]
     restart: unless-stopped
 
 volumes:
