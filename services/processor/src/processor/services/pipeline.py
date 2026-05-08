@@ -1,6 +1,7 @@
 import asyncio
 
 from news_common import get_logger
+from news_common.metrics import posts_dedup_total, posts_indexed_total
 from news_common.models import NormalizedPost, RawPost
 from news_common.repositories import PostsRepository
 
@@ -38,6 +39,7 @@ class ProcessorPipeline:
             buffer.append(normalized)
             if len(buffer) >= FLUSH_BATCH:
                 count = await self._posts.index_many(buffer)
+                posts_indexed_total.inc(count)
                 log.info("indexed", count=count, stream=raw_stream)
                 buffer.clear()
 
@@ -48,8 +50,10 @@ class ProcessorPipeline:
             return None
         tokens, lemmas = self._normalizer.tokenize(cleaned)
         if self._deduper.is_duplicate(post.id, lemmas):
+            posts_dedup_total.labels(outcome="dup").inc()
             log.info("dup_skip", post_id=post.id)
             return None
+        posts_dedup_total.labels(outcome="kept").inc()
         return NormalizedPost(
             id=post.id,
             source=post.source,

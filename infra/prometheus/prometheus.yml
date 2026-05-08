@@ -1,0 +1,27 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  external_labels:
+    project: news-stream-analyzer
+
+scrape_configs:
+  - job_name: prometheus
+    static_configs:
+      - targets: ["localhost:9090"]
+
+  - job_name: api-gateway
+    metrics_path: /metrics
+    static_configs:
+      - targets: ["api-gateway:8000"]
+
+  - job_name: workers
+    metrics_path: /metrics
+    static_configs:
+      - targets:
+          - vk-collector:9100
+          - telegram-collector:9100
+          - processor:9100
+          - nlp-worker:9100
+          - graph-builder:9100
+        labels:
+          tier: pipeline

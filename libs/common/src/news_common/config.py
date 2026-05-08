@@ -42,6 +42,8 @@ class Settings(BaseSettings):
 
     log_level: str = "INFO"
 
+    metrics_port: int = 9100
+
     @property
     def vk_communities_list(self) -> list[str]:
         return [c.strip() for c in self.vk_communities.split(",") if c.strip()]

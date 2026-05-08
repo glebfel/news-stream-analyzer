@@ -2,6 +2,7 @@ import aiohttp
 from news_common import get_settings, setup_logging
 from news_common.clients.opensearch import make_opensearch_client
 from news_common.clients.redis_bus import StreamBus
+from news_common.metrics import start_metrics_server
 from news_common.repositories import EntitiesRepository, SentimentsRepository
 
 from nlp_worker.clients.wikidata import WikidataClient
@@ -16,6 +17,7 @@ from nlp_worker.services.sentiment import build_sentiment_service
 async def main() -> None:
     settings = get_settings()
     setup_logging(settings.log_level, service="nlp_worker")
+    start_metrics_server(settings.metrics_port, service="nlp_worker")
 
     bus = StreamBus(settings.redis_url)
     os_client = make_opensearch_client(

@@ -1,9 +1,11 @@
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Response
 from news_common import get_settings, setup_logging
 from news_common.clients.opensearch import make_opensearch_client
+from news_common.metrics import service_up
 from news_common.repositories.graph import GraphRepository
+from prometheus_client import CONTENT_TYPE_LATEST, generate_latest
 
 from api_gateway.views import entities, graph, health, search, stats
 
@@ -12,6 +14,7 @@ from api_gateway.views import entities, graph, health, search, stats
 async def lifespan(app: FastAPI):
     settings = get_settings()
     setup_logging(settings.log_level, service="api_gateway")
+    service_up.labels(service="api_gateway").set(1)
     app.state.os_client = make_opensearch_client(
         settings.opensearch_url, settings.opensearch_user, settings.opensearch_pass
     )
@@ -21,6 +24,7 @@ async def lifespan(app: FastAPI):
     try:
         yield
     finally:
+        service_up.labels(service="api_gateway").set(0)
         await app.state.os_client.close()
         await app.state.graph_repo.close()
 
@@ -29,3 +33,8 @@ app = FastAPI(title="News Stream Analyzer API", version="0.1.0", lifespan=lifesp
 
 for module in (health, search, stats, entities, graph):
     app.include_router(module.router)
+
+
+@app.get("/metrics")
+def metrics() -> Response:
+    return Response(generate_latest(), media_type=CONTENT_TYPE_LATEST)

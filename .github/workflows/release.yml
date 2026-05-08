@@ -87,7 +87,7 @@ jobs:
           host: ${{ secrets.DEPLOY_HOST }}
           username: ${{ secrets.DEPLOY_USER }}
           key: ${{ secrets.DEPLOY_SSH_KEY }}
-          source: "docker-compose.yml,docker-compose.prod.yml,Caddyfile,infra/migrations/**,scripts/migrate.py"
+          source: "docker-compose.yml,docker-compose.prod.yml,Caddyfile,infra/**,scripts/migrate.py"
           target: /opt/news-stream-analyzer
           overwrite: true
 

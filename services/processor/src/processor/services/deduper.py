@@ -1,20 +1,52 @@
+from urllib.parse import urlparse
+
 from datasketch import MinHash, MinHashLSH
 
 
 class Deduper:
-    def __init__(self, threshold: float = 0.85, num_perm: int = 128) -> None:
-        self._lsh = MinHashLSH(threshold=threshold, num_perm=num_perm)
+    """Streaming near-duplicate detector based on MinHash + LSH.
+
+    By default uses an in-memory LSH index (suitable for tests and local dev).
+    When `redis_url` is provided, the LSH index is backed by Redis through
+    `datasketch`'s built-in storage layer; this makes the dedup state
+    persistent across processor restarts and shareable between replicas.
+    """
+
+    def __init__(
+        self,
+        threshold: float = 0.85,
+        num_perm: int = 128,
+        redis_url: str | None = None,
+        namespace: str = "dedup",
+    ) -> None:
         self._num_perm = num_perm
-        self._seen_ids: set[str] = set()
+        if redis_url:
+            parsed = urlparse(redis_url)
+            self._lsh = MinHashLSH(
+                threshold=threshold,
+                num_perm=num_perm,
+                storage_config={
+                    "type": "redis",
+                    "basename": namespace.encode(),
+                    "redis": {
+                        "host": parsed.hostname or "localhost",
+                        "port": parsed.port or 6379,
+                        "db": int(parsed.path.lstrip("/")) if parsed.path else 0,
+                    },
+                },
+            )
+            self._persistent = True
+        else:
+            self._lsh = MinHashLSH(threshold=threshold, num_perm=num_perm)
+            self._persistent = False
 
     def is_duplicate(self, post_id: str, tokens: list[str]) -> bool:
-        if post_id in self._seen_ids:
+        if self._lsh.__contains__(post_id):
             return True
         sig = self._signature(tokens)
         if self._lsh.query(sig):
             return True
         self._lsh.insert(post_id, sig)
-        self._seen_ids.add(post_id)
         return False
 
     def signature(self, tokens: list[str]) -> MinHash:

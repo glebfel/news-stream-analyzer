@@ -88,6 +88,16 @@ services:
       - dashboard
     restart: unless-stopped
 
+  prometheus:
+    ports: !reset []
+    expose: ["9090"]
+    restart: unless-stopped
+
+  grafana:
+    ports: !reset []
+    expose: ["3000"]
+    restart: unless-stopped
+
 volumes:
   caddy_data:
   caddy_config:

@@ -1,5 +1,6 @@
 from news_common import get_logger, get_settings, setup_logging
 from news_common.clients.redis_bus import StreamBus
+from news_common.metrics import start_metrics_server
 from news_common.repositories.graph import GraphRepository
 
 from graph_builder.services.graph_writer import GraphWriterService
@@ -10,10 +11,12 @@ log = get_logger("graph_builder.runner")
 async def main() -> None:
     settings = get_settings()
     setup_logging(settings.log_level, service="graph_builder")
+    start_metrics_server(settings.metrics_port, service="graph_builder")
 
     bus = StreamBus(settings.redis_url)
     repo = GraphRepository(settings.neo4j_url, settings.neo4j_user, settings.neo4j_pass)
     writer = GraphWriterService(repo)
+    await writer.start()
 
     try:
         async for _, payload in bus.consume(
@@ -27,11 +30,12 @@ async def main() -> None:
                 )
                 continue
             log.info(
-                "graph_updated",
+                "graph_buffered",
                 post_id=payload["post"]["id"],
                 entities=len(payload["entities"]),
                 relations=len(payload.get("relations", [])),
             )
     finally:
+        await writer.stop()
         await repo.close()
         await bus.close()

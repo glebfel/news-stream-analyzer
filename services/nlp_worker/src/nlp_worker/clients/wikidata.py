@@ -1,6 +1,7 @@
 from typing import Any
 
 import aiohttp
+from news_common.metrics import wikidata_cache_hits_total, wikidata_cache_misses_total
 
 from nlp_worker.clients.wikidata_cache import WikidataRedisCache
 
@@ -22,8 +23,10 @@ class WikidataClient:
         if self._cache is not None:
             cached, qid = await self._cache.get(text)
             if cached:
+                wikidata_cache_hits_total.inc()
                 return qid
 
+        wikidata_cache_misses_total.inc()
         qid = await self._search_remote(text)
 
         if self._cache is not None:

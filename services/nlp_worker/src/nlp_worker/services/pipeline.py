@@ -1,5 +1,13 @@
+import time
+
 from news_common import get_logger
 from news_common.clients.redis_bus import StreamBus
+from news_common.metrics import (
+    ner_entities_total,
+    nlp_processed_total,
+    nlp_processing_seconds,
+    sentiment_predictions_total,
+)
 from news_common.models import Entity, NormalizedPost, Sentiment
 from news_common.repositories import EntitiesRepository, SentimentsRepository
 
@@ -46,11 +54,15 @@ class NLPPipeline:
         async for _, payload in self._bus.consume(
             self._clean_stream, self._group, self._consumer, count=8, block_ms=2000
         ):
+            t0 = time.perf_counter()
             post = NormalizedPost.model_validate(payload)
             entities = self._ner.extract(post.text_clean, post.id)
+            for ent in entities:
+                ner_entities_total.labels(entity_type=ent.type.value).inc()
             entities = await self._linker.link(entities)
 
             label, score = self._sentiment.predict(post.text_clean[:1000])
+            sentiment_predictions_total.labels(label=label.value).inc()
             doc_sentiment = Sentiment(post_id=post.id, label=label, score=score)
             relations = self._relations.extract(post.text_clean, entities, post.id)
 
@@ -74,4 +86,6 @@ class NLPPipeline:
                 await self._sentiments_repo.index_many(sent_buffer)
                 sent_buffer.clear()
 
+            nlp_processed_total.inc()
+            nlp_processing_seconds.observe(time.perf_counter() - t0)
             log.info("processed", post_id=post.id, entities=len(entities), label=label.value)

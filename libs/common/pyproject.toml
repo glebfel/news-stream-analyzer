@@ -10,6 +10,7 @@ dependencies = [
     "neo4j>=5.22",
     "structlog>=24.1",
     "orjson>=3.10",
+    "prometheus-client>=0.20",
 ]
 
 [build-system]

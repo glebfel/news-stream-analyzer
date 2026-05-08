@@ -1,5 +1,6 @@
 from news_common import get_settings, setup_logging
 from news_common.clients.redis_bus import StreamBus
+from news_common.metrics import start_metrics_server
 
 from telegram_collector.repositories.stream import RawPostStreamRepository
 from telegram_collector.services.collector import TelegramCollectorService
@@ -8,6 +9,7 @@ from telegram_collector.services.collector import TelegramCollectorService
 async def main() -> None:
     settings = get_settings()
     setup_logging(settings.log_level, service="telegram_collector")
+    start_metrics_server(settings.metrics_port, service="telegram_collector")
 
     bus = StreamBus(settings.redis_url)
     repo = RawPostStreamRepository(bus, settings.stream_raw_tg)
