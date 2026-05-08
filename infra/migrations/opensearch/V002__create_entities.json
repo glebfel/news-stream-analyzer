@@ -1,0 +1,18 @@
+{
+  "action": "create_index",
+  "index": "entities",
+  "body": {
+    "settings": { "number_of_shards": 1, "number_of_replicas": 0 },
+    "mappings": {
+      "properties": {
+        "post_id":     { "type": "keyword" },
+        "text":        { "type": "text", "analyzer": "russian", "fields": { "keyword": { "type": "keyword" } } },
+        "type":        { "type": "keyword" },
+        "span_start":  { "type": "integer" },
+        "span_end":    { "type": "integer" },
+        "wikidata_id": { "type": "keyword" },
+        "confidence":  { "type": "float" }
+      }
+    }
+  }
+}

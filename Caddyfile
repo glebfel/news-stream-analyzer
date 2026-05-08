@@ -1,0 +1,41 @@
+# Caddy reverse proxy for news-stream-analyzer.
+#
+# Set DOMAIN env var on the host before `docker compose up`. Examples:
+#   DOMAIN=news.example.ru                 - real domain you own
+#   DOMAIN=158.160.1.42.nip.io             - free DNS via nip.io (resolves to your IP)
+#   DOMAIN=:80                             - HTTP only, no certificate (for testing)
+#
+# Caddy automatically obtains and renews Let's Encrypt certificates.
+
+{$DOMAIN} {
+    encode gzip zstd
+
+    # API endpoints under /api/*  →  api-gateway:8000
+    handle_path /api/* {
+        reverse_proxy api-gateway:8000
+    }
+
+    # Health check passthrough (no /api prefix)
+    handle /health {
+        reverse_proxy api-gateway:8000
+    }
+
+    # Streamlit dashboard at root.
+    # Streamlit uses websockets — Caddy's reverse_proxy handles upgrade transparently.
+    handle {
+        reverse_proxy dashboard:8501
+    }
+
+    # Basic security headers.
+    header {
+        Strict-Transport-Security "max-age=31536000; includeSubDomains"
+        X-Content-Type-Options "nosniff"
+        X-Frame-Options "SAMEORIGIN"
+        Referrer-Policy "strict-origin-when-cross-origin"
+    }
+
+    log {
+        output stdout
+        format console
+    }
+}

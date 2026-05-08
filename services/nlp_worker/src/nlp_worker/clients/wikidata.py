@@ -1,0 +1,52 @@
+from typing import Any
+
+import aiohttp
+
+from nlp_worker.clients.wikidata_cache import WikidataRedisCache
+
+WIKIDATA_API = "https://www.wikidata.org/w/api.php"
+USER_AGENT = (
+    "news-stream-analyzer/0.1 (https://github.com/glebfel/news-stream-analyzer; "
+    "g.feliust@iqfluence.io) HSE master thesis project"
+)
+
+
+class WikidataClient:
+    def __init__(
+        self, session: aiohttp.ClientSession, cache: WikidataRedisCache | None = None
+    ) -> None:
+        self._session = session
+        self._cache = cache
+
+    async def search(self, text: str) -> str | None:
+        if self._cache is not None:
+            cached, qid = await self._cache.get(text)
+            if cached:
+                return qid
+
+        qid = await self._search_remote(text)
+
+        if self._cache is not None:
+            await self._cache.set(text, qid)
+        return qid
+
+    async def _search_remote(self, text: str) -> str | None:
+        params: dict[str, Any] = {
+            "action": "wbsearchentities",
+            "search": text,
+            "language": "ru",
+            "format": "json",
+            "limit": 1,
+        }
+        try:
+            async with self._session.get(
+                WIKIDATA_API,
+                params=params,
+                headers={"User-Agent": USER_AGENT},
+                timeout=aiohttp.ClientTimeout(total=5),
+            ) as resp:
+                data = await resp.json()
+        except Exception:
+            return None
+        results = data.get("search", [])
+        return results[0]["id"] if results else None

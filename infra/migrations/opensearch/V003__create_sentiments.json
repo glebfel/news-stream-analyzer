@@ -1,0 +1,16 @@
+{
+  "action": "create_index",
+  "index": "sentiments",
+  "body": {
+    "settings": { "number_of_shards": 1, "number_of_replicas": 0 },
+    "mappings": {
+      "properties": {
+        "post_id":     { "type": "keyword" },
+        "label":       { "type": "keyword" },
+        "score":       { "type": "float" },
+        "entity_text": { "type": "keyword" },
+        "entity_type": { "type": "keyword" }
+      }
+    }
+  }
+}

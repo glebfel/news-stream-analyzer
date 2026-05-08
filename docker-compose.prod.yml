@@ -1,0 +1,93 @@
+# Production overrides for docker-compose.yml.
+# Usage:
+#   IMAGE_TAG=sha-abc1234 docker compose -f docker-compose.yml -f docker-compose.prod.yml pull
+#   docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --no-build
+#
+# Differences from base compose:
+# - Application services use prebuilt images from GHCR instead of building locally
+# - Internal services (Redis, OpenSearch, Neo4j) only `expose:` ports inside the
+#   docker network; nothing is published to the host except Caddy
+# - All services have `restart: unless-stopped`
+# - Caddy is added as the only public entrypoint (80, 443) with auto-HTTPS
+# - OpenSearch Dashboards and Neo4j Browser stay private; access them via SSH tunnel
+
+x-image-tag: &image-tag ${IMAGE_TAG:-latest}
+
+services:
+  redis:
+    expose: ["6379"]
+    restart: unless-stopped
+
+  opensearch:
+    ports: !reset []
+    expose: ["9200"]
+    restart: unless-stopped
+
+  opensearch-dashboards:
+    ports: !reset []
+    expose: ["5601"]
+    restart: unless-stopped
+
+  neo4j:
+    ports: !reset []
+    expose: ["7474", "7687"]
+    restart: unless-stopped
+
+  vk-collector:
+    image: ghcr.io/glebfel/news-stream-analyzer-vk-collector:${IMAGE_TAG:-latest}
+    pull_policy: always
+    restart: unless-stopped
+
+  telegram-collector:
+    image: ghcr.io/glebfel/news-stream-analyzer-telegram-collector:${IMAGE_TAG:-latest}
+    pull_policy: always
+    restart: unless-stopped
+
+  processor:
+    image: ghcr.io/glebfel/news-stream-analyzer-processor:${IMAGE_TAG:-latest}
+    pull_policy: always
+    restart: unless-stopped
+
+  nlp-worker:
+    image: ghcr.io/glebfel/news-stream-analyzer-nlp-worker:${IMAGE_TAG:-latest}
+    pull_policy: always
+    restart: unless-stopped
+
+  graph-builder:
+    image: ghcr.io/glebfel/news-stream-analyzer-graph-builder:${IMAGE_TAG:-latest}
+    pull_policy: always
+    restart: unless-stopped
+
+  api-gateway:
+    image: ghcr.io/glebfel/news-stream-analyzer-api-gateway:${IMAGE_TAG:-latest}
+    pull_policy: always
+    ports: !reset []
+    expose: ["8000"]
+    restart: unless-stopped
+
+  dashboard:
+    image: ghcr.io/glebfel/news-stream-analyzer-dashboard:${IMAGE_TAG:-latest}
+    pull_policy: always
+    ports: !reset []
+    expose: ["8501"]
+    restart: unless-stopped
+
+  caddy:
+    image: caddy:2.8-alpine
+    env_file: [.env]
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - api-gateway
+      - dashboard
+    restart: unless-stopped
+
+volumes:
+  caddy_data:
+  caddy_config:
