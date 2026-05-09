@@ -1,3 +1,5 @@
+import asyncio
+
 from news_common.repositories import PostsRepository, SentimentsRepository
 
 from api_gateway.schemas.responses import StatsResponse
@@ -9,8 +11,10 @@ class StatsService:
         self._sentiments = sentiments
 
     async def collect(self) -> StatsResponse:
-        posts_res = await self._posts.stats()
-        sent_res = await self._sentiments.by_label_aggregation()
+        posts_res, sent_res = await asyncio.gather(
+            self._posts.stats(),
+            self._sentiments.by_label_aggregation(),
+        )
         return StatsResponse(
             posts_total=posts_res["hits"]["total"]["value"],
             by_source=posts_res["aggregations"]["by_source"]["buckets"],

@@ -13,4 +13,4 @@ RUN uv sync --package telegram-collector --frozen 2>/dev/null || uv sync --packa
 ENV PATH="/app/.venv/bin:$PATH"
 ENV PYTHONUNBUFFERED=1
 
-CMD ["python", "-m", "telegram_collector"]
+CMD ["python", "-m", "telegram_collector.main"]

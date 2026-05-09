@@ -1,16 +1,3 @@
-"""Evaluate NerService against factRuEval-2016 corpus.
-
-The corpus is cloned into ./data/factRuEval-2016 on first run. Each document
-has a .txt file with text and a .objects file with gold standoff annotations.
-We compute precision/recall/F1 for PER/ORG/LOC at entity level (exact span match)
-and aggregate across documents. Results are written to docs/metrics/.
-
-Usage:
-    uv run python scripts/eval_ner.py [--limit N]
-"""
-
-from __future__ import annotations
-
 import argparse
 import re
 import subprocess
@@ -30,7 +17,6 @@ DATA_DIR = ROOT / "data" / "factRuEval-2016"
 REPO_URL = "https://github.com/dialogue-evaluation/factRuEval-2016.git"
 METRICS_DIR = ROOT / "docs" / "metrics"
 
-# factRuEval span types → our schema
 TYPE_MAP = {
     "Person": EntityType.PER,
     "Org": EntityType.ORG,
@@ -52,11 +38,6 @@ def ensure_corpus() -> None:
 
 
 def parse_spans(path: Path) -> dict[int, tuple[int, int]]:
-    """Parse .spans file: maps span_id → (char_start, char_end).
-
-    Line format:
-        <span_id> <span_type> <char_start> <length> <token_id> 1  # <token_text>
-    """
     out: dict[int, tuple[int, int]] = {}
     if not path.exists():
         return out
@@ -80,11 +61,6 @@ def parse_spans(path: Path) -> dict[int, tuple[int, int]]:
 def parse_objects(
     path: Path, spans: dict[int, tuple[int, int]]
 ) -> list[tuple[EntityType, int, int]]:
-    """Parse .objects file. Each object references span IDs whose union forms the entity.
-
-    Line format:
-        <obj_id> <Type> <span_id1> <span_id2> ... # <surface text>
-    """
     out: list[tuple[EntityType, int, int]] = []
     if not path.exists():
         return out

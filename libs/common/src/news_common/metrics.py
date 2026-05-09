@@ -1,14 +1,5 @@
-"""Prometheus metrics shared across services.
-
-For HTTP services (api-gateway) the metrics are exposed via FastAPI route
-`GET /metrics`. For background workers (collectors, processor, nlp_worker,
-graph_builder) a lightweight HTTP server is started on a configurable port
-through `start_metrics_server(port)`.
-"""
-
 from prometheus_client import Counter, Gauge, Histogram, start_http_server
 
-# Collectors
 posts_collected_total = Counter(
     "posts_collected_total",
     "Number of posts emitted by collectors before deduplication",
@@ -26,18 +17,16 @@ vk_api_calls_total = Counter(
     labelnames=("method", "outcome"),
 )
 
-# Processor
 posts_dedup_total = Counter(
     "posts_dedup_total",
     "Posts seen by processor partitioned by deduplication outcome",
-    labelnames=("outcome",),  # 'kept' | 'dup'
+    labelnames=("outcome",),
 )
 posts_indexed_total = Counter(
     "posts_indexed_total",
     "Posts written to OpenSearch raw_posts index",
 )
 
-# NLP
 nlp_processed_total = Counter(
     "nlp_processed_total",
     "Number of normalized posts processed by NLP worker",
@@ -66,7 +55,6 @@ wikidata_cache_misses_total = Counter(
     "Wikidata lookups that fell through to the remote API",
 )
 
-# Graph builder
 graph_flush_total = Counter(
     "graph_flush_total",
     "Number of UNWIND flushes executed against Neo4j",
@@ -74,7 +62,7 @@ graph_flush_total = Counter(
 graph_flush_size = Histogram(
     "graph_flush_size",
     "Items flushed per UNWIND batch",
-    labelnames=("kind",),  # 'entities' | 'relations'
+    labelnames=("kind",),
     buckets=(1, 5, 10, 25, 50, 100, 200, 500, 1000),
 )
 graph_buffer_depth = Gauge(
@@ -83,7 +71,6 @@ graph_buffer_depth = Gauge(
     labelnames=("kind",),
 )
 
-# Service info
 service_up = Gauge(
     "service_up",
     "1 if the service has started and registered metrics, else 0",
@@ -92,6 +79,5 @@ service_up = Gauge(
 
 
 def start_metrics_server(port: int, service: str) -> None:
-    """Start a background Prometheus HTTP exporter on the given port."""
     start_http_server(port)
     service_up.labels(service=service).set(1)

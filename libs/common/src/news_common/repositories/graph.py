@@ -1,9 +1,7 @@
 from neo4j import AsyncDriver, AsyncGraphDatabase
 
-# Decay factor applied to existing edge weight on each new co-occurrence.
-# Picked so that ~30 days without new mentions halve the weight; tunable.
+# Picked so ~30 days without new mentions halve the edge weight.
 DEFAULT_DECAY = 0.95
-
 REL_TYPE = "MENTIONED_WITH"
 
 
@@ -68,21 +66,12 @@ class GraphRepository:
         await self._driver.close()
 
     async def upsert_entities_batch(self, items: list[dict]) -> None:
-        """Bulk-upsert entities with mention_count + aliases accumulation.
-
-        Each item must contain: key, text, type, wikidata_id, ts.
-        """
         if not items:
             return
         async with self._driver.session() as session:
             await session.run(UPSERT_ENTITIES_BATCH, items=items)
 
     async def upsert_relations_batch(self, items: list[dict]) -> None:
-        """Bulk-upsert MENTIONED_WITH relations with time-decay weighting.
-
-        Each item must contain: head_key, tail_key, post_id, score, ts, window_factor.
-        On match: w := w * decay + window_factor. On create: w := window_factor.
-        """
         if not items:
             return
         async with self._driver.session() as session:

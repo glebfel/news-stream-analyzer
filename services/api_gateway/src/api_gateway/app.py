@@ -1,3 +1,4 @@
+from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Response
@@ -11,7 +12,7 @@ from api_gateway.views import entities, graph, health, search, stats
 
 
 @asynccontextmanager
-async def lifespan(app: FastAPI):
+async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     settings = get_settings()
     setup_logging(settings.log_level, service="api_gateway")
     service_up.labels(service="api_gateway").set(1)

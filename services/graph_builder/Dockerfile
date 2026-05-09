@@ -13,4 +13,4 @@ RUN uv sync --package graph-builder --frozen 2>/dev/null || uv sync --package gr
 ENV PATH="/app/.venv/bin:$PATH"
 ENV PYTHONUNBUFFERED=1
 
-CMD ["python", "-m", "graph_builder"]
+CMD ["python", "-m", "graph_builder.main"]

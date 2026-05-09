@@ -1,10 +1,3 @@
-"""Persistent per-community cursor for the VK collector.
-
-After a restart the collector resumes from the last seen post id, instead of
-re-publishing the most recent N posts that have already gone through the
-pipeline.
-"""
-
 from redis.asyncio import Redis
 
 KEY_PREFIX = "vk:last_seen:"
@@ -23,7 +16,6 @@ class LastSeenCursor:
 
     @staticmethod
     def numeric_id(post_id: str) -> int:
-        """Extract the numeric VK post id from our `vk_<domain>_<num>` format."""
         try:
             return int(post_id.rsplit("_", 1)[-1])
         except ValueError:

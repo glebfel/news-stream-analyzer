@@ -1,16 +1,3 @@
-"""Evaluate SentimentService against a Russian sentiment benchmark.
-
-Tries to load a public HuggingFace dataset (MonoHime/ru_sentiment_dataset) by
-default. Falls back to a bundled hand-labelled held-out set when the dataset
-library or network is unavailable. Reports accuracy and per-class precision /
-recall / F1.
-
-Usage:
-    uv run python scripts/eval_sentiment.py [--mode lite|full] [--limit N] [--builtin]
-"""
-
-from __future__ import annotations
-
 import argparse
 import sys
 from collections import defaultdict
@@ -26,8 +13,7 @@ from nlp_worker.services.sentiment import build_sentiment_service  # noqa: E402
 
 METRICS_DIR = ROOT / "docs" / "metrics"
 
-# Hand-labelled held-out set covering typical Russian news patterns.
-# 60 examples balanced across positive / negative / neutral.
+# Hand-labelled held-out set, balanced across positive / negative / neutral.
 BUILTIN_SET: list[tuple[str, SentimentLabel]] = [
     # positive
     ("Сборная России выиграла чемпионат мира по хоккею", SentimentLabel.POSITIVE),
@@ -99,10 +85,6 @@ BUILTIN_SET: list[tuple[str, SentimentLabel]] = [
 
 
 def load_huggingface(name: str, limit: int | None) -> list[tuple[str, SentimentLabel]]:
-    """Try to load a public Russian sentiment dataset from HuggingFace.
-
-    Returns empty list on failure (caller falls back to built-in).
-    """
     try:
         from datasets import load_dataset
     except Exception as exc:
@@ -122,8 +104,8 @@ def load_huggingface(name: str, limit: int | None) -> list[tuple[str, SentimentL
     for row in ds:
         text = row.get("text") or row.get("review") or row.get("sentence") or ""
         raw_label = row.get("label", row.get("sentiment", -1))
-        # MonoHime mapping: 0=neutral, 1=positive, 2=negative
         if isinstance(raw_label, int):
+            # MonoHime label codes: 0=neutral, 1=positive, 2=negative.
             mapping = {
                 0: SentimentLabel.NEUTRAL,
                 1: SentimentLabel.POSITIVE,

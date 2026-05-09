@@ -26,11 +26,15 @@ VK / Telegram  →  collectors  →  Redis Streams  →  processor (dedup + norm
 
 - Python 3.11, uv (workspace‑монорепо)
 - aiohttp, Telethon — сбор
-- datasketch (MinHash), razdel, pymorphy3 — обработка
+- datasketch (MinHash + Redis‑backed LSH) — устойчивая дедупликация между перезапусками
+- razdel, pymorphy3 — токенизация и нормализация
 - Natasha — NER, RuBERT (опционально, через `NLP_MODE=full`) — тональность
+- Wikidata `wbsearchentities` (Entity Linking) с кешем в Redis
 - OpenSearch 2.15, Neo4j 5.22 community, Redis 7.4
 - FastAPI — API, Streamlit + Plotly — UI
-- Docker Compose, GitHub Actions
+- Prometheus + Grafana — метрики и дашборды
+- Caddy — reverse proxy + автоматический HTTPS (Let's Encrypt)
+- Docker Compose, GitHub Actions → GHCR, деплой на Yandex Cloud
 
 ## Быстрый старт
 
@@ -48,6 +52,8 @@ make seed               # генерирует синтетические пос
 - Neo4j Browser — http://localhost:7474 (neo4j / neopassword123)
 - API — http://localhost:8000/docs
 - Streamlit UI — http://localhost:8501
+- Prometheus — http://localhost:9090
+- Grafana — http://localhost:3000 (admin / admin)
 
 ## Режим работы без ключей
 
@@ -76,11 +82,38 @@ make seed               # генерирует синтетические пос
 
 ### Telegram
 
-Документация по подключению будет добавлена позже. Сейчас Telegram‑коллектор работает только в `mock`‑режиме.
+1. Зарегистрировать приложение на https://my.telegram.org → API development tools — получить `api_id` и `api_hash`.
+2. В `.env`:
+   ```
+   COLLECTOR_MODE=real
+   TG_API_ID=<id>
+   TG_API_HASH=<hash>
+   TG_CHANNELS=ria,tass,bbcrussian
+   ```
+3. При первом запуске Telethon попросит код из SMS — авторизоваться интерактивно, файл сессии сохранится в томе. Дальше коллектор работает в фоне.
+
+## Метрики и мониторинг
+
+В каждом сервисе доступен `/metrics` (для воркеров — на отдельном порту 9100). Prometheus собирает с api_gateway и всех воркеров. В Grafana заведён дашборд из 9 панелей: пропускная способность по этапам, p50/p95 латентности API, заполненность буфера графа, hit‑rate Wikidata‑кеша, доли тональности и т.п.
 
 ## NLP на CPU
 
 По умолчанию `NLP_MODE=lite`: NER через Natasha (быстро, без GPU), тональность — лексиконный классификатор. Для полного режима с RuBERT (~700 МБ, медленнее на CPU) поставьте `NLP_MODE=full`.
+
+## Миграции
+
+Схема OpenSearch и Neo4j версионируется как `infra/migrations/{opensearch,neo4j}/V###__name.{json,cypher}`. Раннер `scripts/migrate.py` идемпотентен: применённые версии регистрируются в индексе `news_migrations` и узлах `(:Migration)`, повторный запуск пропускает их.
+
+## Бенчмарки
+
+В `scripts/` лежат скрипты оценки:
+
+- `eval_ner.py` — NER на factRuEval‑2016 (P/R/F1 по PER/ORG/LOC);
+- `eval_sentiment.py` — тональность на встроенном hand‑labelled датасете либо HF;
+- `eval_throughput.py` — end‑to‑end пропускная способность пайплайна;
+- `eval_latency.py` — p50/p95/p99 эндпоинтов API.
+
+Результаты сохраняются в `docs/metrics/`.
 
 ## Разработка
 
@@ -96,12 +129,18 @@ make clean              # сбросить тома
 ## Структура
 
 ```
-libs/common/            — общие схемы, клиенты Redis/OpenSearch, логирование
-services/               — 7 микросервисов
-infra/                  — маппинги OpenSearch, init‑скрипт Neo4j
-scripts/                — bootstrap и генератор моков
+libs/common/            — общие схемы, клиенты Redis/OpenSearch/Neo4j, метрики, логирование
+services/               — 7 микросервисов (vk_collector, telegram_collector, processor,
+                          nlp_worker, graph_builder, api_gateway, dashboard)
+infra/                  — миграции OpenSearch/Neo4j, конфиги Prometheus/Grafana/Caddy
+scripts/                — миграции, генератор моков, бенчмарки
 tests/                  — unit + integration
+docs/                   — описание архитектуры и результаты бенчмарков
 ```
+
+## Деплой
+
+CI: GitHub Actions с матричной сборкой образов и публикацией в GHCR. Деплой по SSH на Yandex Cloud (4 vCPU / 8 ГБ): тянутся свежие теги, `docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d`. Caddy на хосте проксирует HTTPS на api_gateway/dashboard и автоматически обновляет сертификаты Let's Encrypt по `*.nip.io`.
 
 ## Лицензия
 

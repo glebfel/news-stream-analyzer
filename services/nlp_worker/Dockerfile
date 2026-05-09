@@ -21,4 +21,4 @@ ENV PYTHONUNBUFFERED=1
 ENV TRANSFORMERS_CACHE=/app/models/cache
 ENV HF_HOME=/app/models/cache
 
-CMD ["python", "-m", "nlp_worker"]
+CMD ["python", "-m", "nlp_worker.main"]

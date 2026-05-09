@@ -10,15 +10,6 @@ log = get_logger("graph_builder.writer")
 
 
 class GraphWriterService:
-    """Buffers entities/relations across enriched messages and flushes them to
-    Neo4j as bulk UNWIND queries.
-
-    Flush triggers:
-      - buffered entities reach `flush_every`
-      - last flush was more than `flush_seconds` ago
-      - explicit `flush()` (called on shutdown)
-    """
-
     def __init__(
         self,
         repo: GraphRepository,
@@ -35,12 +26,10 @@ class GraphWriterService:
         self._timer_task: asyncio.Task | None = None
 
     async def start(self) -> None:
-        """Start the background timer that flushes idle buffers."""
         if self._timer_task is None:
             self._timer_task = asyncio.create_task(self._timer_loop())
 
     async def stop(self) -> None:
-        """Cancel the timer and drain remaining buffers."""
         if self._timer_task is not None:
             self._timer_task.cancel()
             with contextlib.suppress(asyncio.CancelledError):

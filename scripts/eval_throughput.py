@@ -1,22 +1,3 @@
-"""Measure end-to-end pipeline throughput in posts/sec.
-
-Pushes N synthetic posts into the raw VK stream, then polls OpenSearch
-`raw_posts` and `entities` indices until they reach the target document count.
-Reports posts/sec at three pipeline stages:
-
-  collected → indexed (raw)
-  collected → enriched (NER + sentiment + EL)
-  collected → graph (Neo4j upserts)
-
-Run inside the project venv (uv run) or set REDIS_URL/OPENSEARCH_URL/NEO4J_URL
-to point at a target environment (defaults: localhost dev compose).
-
-Usage:
-    uv run python scripts/eval_throughput.py [--count N] [--source vk|telegram]
-"""
-
-from __future__ import annotations
-
 import argparse
 import asyncio
 import sys
@@ -37,7 +18,6 @@ METRICS_DIR = ROOT / "docs" / "metrics"
 
 
 async def _wait_for(query, target: int, timeout: float = 600.0, poll: float = 1.0) -> float | None:
-    """Poll `query()` until it returns >= target. Returns elapsed seconds or None on timeout."""
     start = time.monotonic()
     while time.monotonic() - start < timeout:
         if await query() >= target:
@@ -77,7 +57,6 @@ async def main() -> None:
     source = Source.VK if args.source == "vk" else Source.TELEGRAM
     stream = settings.stream_raw_vk if source == Source.VK else settings.stream_raw_tg
 
-    # baselines
     raw_base = (await os_client.count(index="raw_posts")).get("count", 0)
     ent_base = (await os_client.count(index="entities")).get("count", 0)
     async with neo_driver.session() as s:
@@ -89,7 +68,6 @@ async def main() -> None:
         flush=True,
     )
 
-    # Publish
     pub_start = time.monotonic()
     for _ in range(args.count):
         post = fake_post(source)
@@ -97,20 +75,17 @@ async def main() -> None:
     pub_dur = time.monotonic() - pub_start
     print(f"published {args.count} posts in {pub_dur:.2f}s", flush=True)
 
-    # Stage 1: indexed in raw_posts (after dedup + normalize). With MinHash dedup,
-    # mock posts can collide; we use 80% as the realistic floor.
+    # Mock templates collide under MinHash dedup, so 60% is the realistic floor.
     raw_target = int(args.count * 0.6)
     t_raw = await _wait_for(
         lambda: os_count(os_client, "raw_posts", raw_base), raw_target, timeout=args.timeout
     )
 
-    # Stage 2: NLP enrichment (entities)
     ent_target = int(raw_target * 0.5)
     t_ent = await _wait_for(
         lambda: os_count(os_client, "entities", ent_base), ent_target, timeout=args.timeout
     )
 
-    # Stage 3: graph
     graph_target = int(raw_target * 0.3)
     t_graph = await _wait_for(
         lambda: neo4j_count(neo_driver, graph_base), graph_target, timeout=args.timeout

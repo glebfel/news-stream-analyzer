@@ -1,5 +1,3 @@
-"""Seed Redis raw streams with synthetic posts (for local development without API keys)."""
-
 import argparse
 import asyncio
 

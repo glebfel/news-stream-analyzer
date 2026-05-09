@@ -1,15 +1,3 @@
-"""Measure API endpoint latency (p50 / p95 / p99) on a live deployment.
-
-Hits each endpoint N times sequentially and computes percentiles. Run against
-local dev (default http://localhost:8000) or production
-(--base-url https://news.example/api).
-
-Usage:
-    uv run python scripts/eval_latency.py [--n 200] [--base-url URL]
-"""
-
-from __future__ import annotations
-
 import argparse
 import contextlib
 import statistics

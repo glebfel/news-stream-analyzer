@@ -13,4 +13,4 @@ RUN uv sync --package vk-collector --frozen 2>/dev/null || uv sync --package vk-
 ENV PATH="/app/.venv/bin:$PATH"
 ENV PYTHONUNBUFFERED=1
 
-CMD ["python", "-m", "vk_collector"]
+CMD ["python", "-m", "vk_collector.main"]

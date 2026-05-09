@@ -1,18 +1,3 @@
-"""Schema migration runner for OpenSearch and Neo4j.
-
-Conventions:
-  infra/migrations/opensearch/V###__<name>.json
-  infra/migrations/neo4j/V###__<name>.cypher
-
-State is stored in:
-  - OpenSearch index `news_migrations` (one doc per applied version)
-  - Neo4j nodes `(:Migration {version, applied_at})`
-
-Re-running is idempotent: already-applied versions are skipped.
-"""
-
-from __future__ import annotations
-
 import asyncio
 import json
 import re

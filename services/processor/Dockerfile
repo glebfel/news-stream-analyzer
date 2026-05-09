@@ -13,4 +13,4 @@ RUN uv sync --package processor --frozen 2>/dev/null || uv sync --package proces
 ENV PATH="/app/.venv/bin:$PATH"
 ENV PYTHONUNBUFFERED=1
 
-CMD ["python", "-m", "processor"]
+CMD ["python", "-m", "processor.main"]
