@@ -25,7 +25,20 @@ def render(api: ApiClient) -> None:
         st.info("Пока нет локаций с привязкой к Wikidata. Подождите свежих постов.")
         return
 
-    fmap = folium.Map(location=[55, 50], zoom_start=2, tiles="cartodbpositron")
+    # CARTO Voyager has English-only labels; the default Positron pulls
+    # localised glyphs (Chinese/Arabic) which look like noise on a Russian UI.
+    fmap = folium.Map(
+        location=[55, 50],
+        zoom_start=2,
+        tiles="https://{s}.basemaps.cartocdn.com/rastertiles/voyager_nolabels/{z}/{x}/{y}{r}.png",
+        attr=(
+            '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> '
+            '&copy; <a href="https://carto.com/attributions">CARTO</a>'
+        ),
+    )
+    fmap.get_root().header.add_child(
+        folium.Element("<style>.leaflet-attribution-flag{display:none!important;}</style>")
+    )
     max_count = max(r["mention_count"] for r in rows)
     for r in rows:
         radius = 4 + 16 * (r["mention_count"] / max_count)

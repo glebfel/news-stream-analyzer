@@ -67,18 +67,22 @@ def render(api: ApiClient) -> None:
             node=dict(
                 label=labels,
                 color=colors,
-                pad=18,
-                thickness=18,
+                pad=22,
+                thickness=22,
                 line=dict(width=0),
+                hovertemplate="%{label}<extra></extra>",
             ),
             link=dict(
                 source=sources,
                 target=targets,
                 value=values,
-                color="rgba(120,120,120,0.25)",
+                color="rgba(120,120,120,0.3)",
+                hovertemplate="%{source.label} → %{target.label}<br>упоминаний: %{value}<extra></extra>",
             ),
+            textfont=dict(size=14, color="#111"),
         )
     )
-    fig.update_layout(height=600, margin=dict(l=10, r=10, t=10, b=10))
+    height = max(550, 32 * max(n_channels, len(entities_idx)))
+    fig.update_layout(height=height, margin=dict(l=120, r=160, t=20, b=20))
     st.plotly_chart(fig, use_container_width=True)
     st.caption(f"Источников: {n_channels}, сущностей: {len(entities_idx)}, связей: {len(rows)}")
