@@ -14,6 +14,20 @@ TYPE_LABELS = {"PER": "Персона", "ORG": "Организация", "LOC": 
 
 
 def render(api: ApiClient) -> None:
+    st.html(
+        """
+        <style>
+        .js-plotly-plot text {
+            fill: currentColor !important;
+            stroke: none !important;
+            stroke-width: 0 !important;
+            paint-order: fill !important;
+            text-shadow: none !important;
+            filter: none !important;
+        }
+        </style>
+        """
+    )
     col_entity, col_limit = st.columns([3, 1])
     with col_entity:
         entity = st.text_input("Сущность", value="Москва", key="graph_entity")
@@ -99,6 +113,8 @@ def render(api: ApiClient) -> None:
         margin=dict(l=10, r=10, t=40, b=10),
         xaxis=dict(visible=False),
         yaxis=dict(visible=False),
+        paper_bgcolor="rgba(0,0,0,0)",
+        plot_bgcolor="rgba(0,0,0,0)",
     )
     st.plotly_chart(fig, use_container_width=True)
     st.caption(

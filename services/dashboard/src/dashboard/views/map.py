@@ -7,20 +7,12 @@ from dashboard.services.api_client import ApiClient
 
 def render(api: ApiClient) -> None:
     st.caption(
-        "Локации из новостного потока на карте мира. "
+        "Все упомянутые локации из новостного потока на карте мира. "
         "Координаты подтянуты из Wikidata по найденным QID; "
         "размер маркера пропорционален числу упоминаний."
     )
-    size = st.slider(
-        "Сколько локаций",
-        min_value=10,
-        max_value=100,
-        value=30,
-        step=5,
-        key="map_size",
-    )
     with st.spinner("Запрашиваю Wikidata за координатами…"):
-        rows = api.locations(size=size)
+        rows = api.locations(size=500)
     if not rows:
         st.info("Пока нет локаций с привязкой к Wikidata. Подождите свежих постов.")
         return
