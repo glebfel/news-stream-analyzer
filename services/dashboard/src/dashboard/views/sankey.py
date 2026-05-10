@@ -2,13 +2,8 @@ import plotly.graph_objects as go
 import streamlit as st
 
 from dashboard.services.api_client import ApiClient
+from dashboard.views._labels import TYPE_LABELS_FILTER as TYPE_LABELS
 
-TYPE_LABELS: dict[str | None, str] = {
-    None: "Все типы",
-    "PER": "Персоны",
-    "ORG": "Организации",
-    "LOC": "Локации",
-}
 CHANNEL_COLOR = "rgba(59,130,246,0.55)"
 ENTITY_COLOR = "rgba(16,185,129,0.55)"
 

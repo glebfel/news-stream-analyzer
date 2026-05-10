@@ -40,7 +40,13 @@ class PostsRepository:
             "size": 0,
             "aggs": {
                 "by_source": {"terms": {"field": "source", "size": 10}},
-                "by_day": {"date_histogram": {"field": "posted_at", "calendar_interval": "day"}},
+                "by_day": {
+                    "date_histogram": {
+                        "field": "posted_at",
+                        "calendar_interval": "day",
+                        "time_zone": "Europe/Moscow",
+                    }
+                },
             },
         }
         return await self._client.search(index=INDEX, body=body)

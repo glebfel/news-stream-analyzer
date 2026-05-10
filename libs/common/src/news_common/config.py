@@ -44,6 +44,11 @@ class Settings(BaseSettings):
 
     metrics_port: int = 9100
 
+    display_timezone: str = "Europe/Moscow"
+    wikidata_user_agent: str = (
+        "news-stream-analyzer/1.0 (https://github.com/glebfel/news-stream-analyzer)"
+    )
+
     @property
     def vk_communities_list(self) -> list[str]:
         return [c.strip() for c in self.vk_communities.split(",") if c.strip()]

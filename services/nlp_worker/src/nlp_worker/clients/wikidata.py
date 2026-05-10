@@ -1,15 +1,12 @@
 from typing import Any
 
 import httpx
+from news_common import get_settings
 from news_common.metrics import wikidata_cache_hits_total, wikidata_cache_misses_total
 
 from nlp_worker.clients.wikidata_cache import WikidataRedisCache
 
 WIKIDATA_API = "https://www.wikidata.org/w/api.php"
-USER_AGENT = (
-    "news-stream-analyzer/0.1 (https://github.com/glebfel/news-stream-analyzer; "
-    "g.feliust@iqfluence.io) HSE master thesis project"
-)
 
 
 class WikidataClient:
@@ -43,7 +40,7 @@ class WikidataClient:
             resp = await self._client.get(
                 WIKIDATA_API,
                 params=params,
-                headers={"User-Agent": USER_AGENT},
+                headers={"User-Agent": get_settings().wikidata_user_agent},
                 timeout=5,
             )
             data = resp.json()

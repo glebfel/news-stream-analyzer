@@ -3,14 +3,8 @@ import plotly.graph_objects as go
 import streamlit as st
 
 from dashboard.services.api_client import ApiClient
-
-TYPE_COLORS = {
-    "PER": "#3b82f6",
-    "ORG": "#10b981",
-    "LOC": "#ef4444",
-    "EVENT": "#f59e0b",
-}
-TYPE_LABELS = {"PER": "Персона", "ORG": "Организация", "LOC": "Локация", "EVENT": "Событие"}
+from dashboard.views._labels import TYPE_COLORS
+from dashboard.views._labels import TYPE_LABELS_NODE as TYPE_LABELS
 
 
 def render(api: ApiClient) -> None:

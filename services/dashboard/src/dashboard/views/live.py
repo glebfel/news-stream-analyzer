@@ -1,11 +1,10 @@
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Any
 
 import streamlit as st
 
 from dashboard.services.api_client import ApiClient
-
-SOURCE_LABELS = {"vk": "ВКонтакте", "telegram": "Telegram"}
+from dashboard.views._labels import DISPLAY_TZ, SOURCE_LABELS
 
 
 def render(api: ApiClient) -> None:
@@ -16,7 +15,7 @@ def render(api: ApiClient) -> None:
 @st.fragment(run_every=10)
 def _stream(api: ApiClient) -> None:
     data = api.latest(size=10)
-    st.caption(f"Последнее обновление: {datetime.now().strftime('%H:%M:%S')}")
+    st.caption(f"Последнее обновление: {datetime.now(DISPLAY_TZ).strftime('%H:%M:%S')} МСК")
     for item in data["items"]:
         with st.container(border=True):
             st.markdown(_header(item))
@@ -43,6 +42,9 @@ def _format_ts(ts: str | None) -> str:
     if not ts:
         return ""
     try:
-        return datetime.fromisoformat(ts).strftime("%Y-%m-%d %H:%M")
+        dt = datetime.fromisoformat(ts)
     except ValueError:
         return ts
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=UTC)
+    return dt.astimezone(DISPLAY_TZ).strftime("%Y-%m-%d %H:%M")

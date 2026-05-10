@@ -3,10 +3,11 @@ import plotly.express as px
 import streamlit as st
 
 from dashboard.services.api_client import ApiClient
-
-SOURCE_LABELS = {"vk": "ВКонтакте", "telegram": "Telegram"}
-SENTIMENT_LABELS = {"positive": "позитив", "negative": "негатив", "neutral": "нейтрально"}
-SENTIMENT_COLORS = {"позитив": "#10b981", "негатив": "#ef4444", "нейтрально": "#94a3b8"}
+from dashboard.views._labels import (
+    SENTIMENT_COLORS,
+    SENTIMENT_LABELS,
+    SOURCE_LABELS,
+)
 
 
 def render(api: ApiClient) -> None:
@@ -40,7 +41,7 @@ def render(api: ApiClient) -> None:
             )
     df_day = pd.DataFrame(data["by_day"])
     if not df_day.empty:
-        df_day["День"] = pd.to_datetime(df_day["key_as_string"])
+        df_day["День"] = pd.to_datetime(df_day["key_as_string"], utc=True).dt.tz_convert(None)
         df_day = df_day.rename(columns={"doc_count": "Постов"})
         df_day = df_day[df_day["Постов"] > 0].sort_values("День")
         if not df_day.empty:

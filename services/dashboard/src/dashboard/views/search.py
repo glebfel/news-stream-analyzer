@@ -1,16 +1,11 @@
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Any
 
 import streamlit as st
 from streamlit_searchbox import st_searchbox
 
 from dashboard.services.api_client import ApiClient
-
-SOURCE_LABELS: dict[str | None, str] = {
-    None: "Все источники",
-    "vk": "ВКонтакте",
-    "telegram": "Telegram",
-}
+from dashboard.views._labels import DISPLAY_TZ, SOURCE_LABELS_FULL
 
 
 def render(api: ApiClient) -> None:
@@ -32,7 +27,7 @@ def render(api: ApiClient) -> None:
         src = st.selectbox(
             "Источник",
             options=[None, "vk", "telegram"],
-            format_func=lambda v: SOURCE_LABELS[v],
+            format_func=lambda v: SOURCE_LABELS_FULL[v],
             label_visibility="collapsed",
             key="search_source",
         )
@@ -48,7 +43,7 @@ def render(api: ApiClient) -> None:
 
 def _header(item: dict[str, Any]) -> str:
     source = item.get("source")
-    label = SOURCE_LABELS.get(source, source or "?")
+    label = SOURCE_LABELS_FULL.get(source, source or "?")
     channel = (item.get("metadata") or {}).get("channel")
     ts = _format_ts(item.get("posted_at"))
     parts = [f"**{label}**"]
@@ -66,6 +61,9 @@ def _format_ts(ts: str | None) -> str:
     if not ts:
         return ""
     try:
-        return datetime.fromisoformat(ts).strftime("%Y-%m-%d %H:%M")
+        dt = datetime.fromisoformat(ts)
     except ValueError:
         return ts
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=UTC)
+    return dt.astimezone(DISPLAY_TZ).strftime("%Y-%m-%d %H:%M")

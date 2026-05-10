@@ -1,14 +1,13 @@
 from typing import Any
 
 import httpx
+from news_common import get_settings
 from news_common.repositories import EntitiesRepository
 from redis.asyncio import Redis
 
 WIKIDATA_API = "https://www.wikidata.org/w/api.php"
-USER_AGENT = "news-stream-analyzer/1.0 (https://github.com/glebfel/news-stream-analyzer)"
 COORDS_KEY = "wd_coords:"
 SENTINEL_NONE = "__none__"
-TTL_SECONDS = 30 * 86400
 WBGETENTITIES_BATCH = 50
 
 
@@ -22,7 +21,10 @@ class WikidataCoordsClient:
             return out
         async with httpx.AsyncClient(
             timeout=15,
-            headers={"User-Agent": USER_AGENT, "Accept": "application/json"},
+            headers={
+                "User-Agent": get_settings().wikidata_user_agent,
+                "Accept": "application/json",
+            },
         ) as client:
             for start in range(0, len(qids), WBGETENTITIES_BATCH):
                 batch = qids[start : start + WBGETENTITIES_BATCH]
@@ -58,7 +60,7 @@ class WikidataCoordsClient:
 
 
 class WikidataCoordsCache:
-    def __init__(self, redis_url: str, ttl_seconds: int = TTL_SECONDS) -> None:
+    def __init__(self, redis_url: str, ttl_seconds: int) -> None:
         self._redis: Redis = Redis.from_url(redis_url, decode_responses=True)
         self._ttl = ttl_seconds
 

@@ -28,7 +28,9 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     app.state.graph_repo = GraphRepository(
         settings.neo4j_url, settings.neo4j_user, settings.neo4j_pass
     )
-    app.state.coords_cache = WikidataCoordsCache(settings.redis_url)
+    app.state.coords_cache = WikidataCoordsCache(
+        settings.redis_url, ttl_seconds=settings.vk_wikidata_cache_ttl
+    )
     app.state.locations_service = LocationsService(
         EntitiesRepository(app.state.os_client),
         app.state.coords_cache,
