@@ -34,6 +34,7 @@ def render(api: ApiClient) -> None:
             options=[None, "vk", "telegram"],
             format_func=lambda v: SOURCE_LABELS[v],
             label_visibility="collapsed",
+            key="search_source",
         )
     if not q:
         return

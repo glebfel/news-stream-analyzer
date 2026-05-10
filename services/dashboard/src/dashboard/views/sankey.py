@@ -24,11 +24,20 @@ def render(api: ApiClient) -> None:
             "Тип сущности",
             options=[None, "PER", "ORG", "LOC"],
             format_func=lambda v: TYPE_LABELS[v],
+            key="sankey_etype",
         )
     with col_n:
-        channels = st.slider("Источников", min_value=3, max_value=15, value=8)
+        channels = st.slider(
+            "Источников", min_value=3, max_value=15, value=8, key="sankey_channels"
+        )
     with col_p:
-        per_channel = st.slider("Сущностей на источник", min_value=3, max_value=10, value=5)
+        per_channel = st.slider(
+            "Сущностей на источник",
+            min_value=3,
+            max_value=10,
+            value=5,
+            key="sankey_per_channel",
+        )
 
     rows = api.sankey(channels=channels, per_channel=per_channel, etype=etype)
     if not rows:

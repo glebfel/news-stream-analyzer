@@ -19,9 +19,17 @@ def render(api: ApiClient) -> None:
             "Тип сущности",
             options=[None, "PER", "ORG", "LOC"],
             format_func=lambda v: TYPE_LABELS[v],
+            key="entities_etype",
         )
     with col_size:
-        size = st.slider("Сколько показывать", min_value=10, max_value=100, value=30, step=5)
+        size = st.slider(
+            "Сколько показывать",
+            min_value=10,
+            max_value=100,
+            value=30,
+            step=5,
+            key="entities_size",
+        )
     data = api.top_entities(etype=etype, size=size)
     df = pd.DataFrame(data["items"])
     if df.empty:

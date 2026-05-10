@@ -16,9 +16,11 @@ TYPE_LABELS = {"PER": "Персона", "ORG": "Организация", "LOC": 
 def render(api: ApiClient) -> None:
     col_entity, col_limit = st.columns([3, 1])
     with col_entity:
-        entity = st.text_input("Сущность", value="Москва")
+        entity = st.text_input("Сущность", value="Москва", key="graph_entity")
     with col_limit:
-        limit = st.slider("Связей", min_value=20, max_value=200, value=60, step=10)
+        limit = st.slider(
+            "Связей", min_value=20, max_value=200, value=60, step=10, key="graph_limit"
+        )
     if not entity:
         return
     data = api.subgraph(entity=entity, limit=limit)

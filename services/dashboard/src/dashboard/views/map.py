@@ -11,7 +11,14 @@ def render(api: ApiClient) -> None:
         "Координаты подтянуты из Wikidata по найденным QID; "
         "размер маркера пропорционален числу упоминаний."
     )
-    size = st.slider("Сколько локаций", min_value=10, max_value=100, value=30, step=5)
+    size = st.slider(
+        "Сколько локаций",
+        min_value=10,
+        max_value=100,
+        value=30,
+        step=5,
+        key="map_size",
+    )
     with st.spinner("Запрашиваю Wikidata за координатами…"):
         rows = api.locations(size=size)
     if not rows:
