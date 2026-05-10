@@ -15,3 +15,8 @@ class EntitiesService:
     async def top(self, etype: str | None, size: int) -> TopEntitiesResponse:
         res = await self._repo.top(etype=etype, size=size)
         return TopEntitiesResponse(items=res["aggregations"]["top"]["buckets"])
+
+    async def suggest(self, q: str, size: int) -> list[str]:
+        res = await self._repo.suggest(prefix=q, size=size)
+        buckets = res["aggregations"]["top"]["buckets"]
+        return [b["key"] for b in buckets]

@@ -52,22 +52,31 @@ class GraphWriterService:
         ts: str = payload["post"]["posted_at"]
         score = self._signed_score(payload.get("sentiment") or {})
 
+        # Resolve QIDs for surface forms in this post so that relation endpoints
+        # use the same (qid-based) key as the entity nodes.
+        qid_by_form: dict[tuple[str, str], str | None] = {
+            (ent["text"], ent["type"]): ent.get("wikidata_id") for ent in payload["entities"]
+        }
+
         async with self._lock:
             for ent in payload["entities"]:
+                qid = ent.get("wikidata_id")
                 self._entities.append(
                     {
-                        "key": entity_key(ent["text"], ent["type"]),
+                        "key": entity_key(ent["text"], ent["type"], qid),
                         "text": ent["text"],
                         "type": ent["type"],
-                        "wikidata_id": ent.get("wikidata_id"),
+                        "wikidata_id": qid,
                         "ts": ts,
                     }
                 )
             for rel in payload.get("relations", []):
+                head_qid = qid_by_form.get((rel["head"], rel["head_type"]))
+                tail_qid = qid_by_form.get((rel["tail"], rel["tail_type"]))
                 self._relations.append(
                     {
-                        "head_key": entity_key(rel["head"], rel["head_type"]),
-                        "tail_key": entity_key(rel["tail"], rel["tail_type"]),
+                        "head_key": entity_key(rel["head"], rel["head_type"], head_qid),
+                        "tail_key": entity_key(rel["tail"], rel["tail_type"], tail_qid),
                         "post_id": post_id,
                         "score": score,
                         "ts": ts,

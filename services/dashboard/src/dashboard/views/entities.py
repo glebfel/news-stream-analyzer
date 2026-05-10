@@ -9,7 +9,6 @@ TYPE_LABELS: dict[str | None, str] = {
     "PER": "Персоны",
     "ORG": "Организации",
     "LOC": "Локации",
-    "EVENT": "События",
 }
 
 
@@ -18,7 +17,7 @@ def render(api: ApiClient) -> None:
     with col_type:
         etype = st.selectbox(
             "Тип сущности",
-            options=[None, "PER", "ORG", "LOC", "EVENT"],
+            options=[None, "PER", "ORG", "LOC"],
             format_func=lambda v: TYPE_LABELS[v],
         )
     with col_size:

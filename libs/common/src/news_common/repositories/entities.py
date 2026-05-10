@@ -28,3 +28,11 @@ class EntitiesRepository:
         if etype:
             body["query"] = {"term": {"type": etype}}
         return await self._client.search(index=INDEX, body=body)
+
+    async def suggest(self, prefix: str, size: int = 10) -> dict[str, Any]:
+        body: dict[str, Any] = {
+            "size": 0,
+            "query": {"match_phrase_prefix": {"text": {"query": prefix, "max_expansions": 50}}},
+            "aggs": {"top": {"terms": {"field": "text.keyword", "size": size}}},
+        }
+        return await self._client.search(index=INDEX, body=body)

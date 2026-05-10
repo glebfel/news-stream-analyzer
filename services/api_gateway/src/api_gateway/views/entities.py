@@ -22,3 +22,12 @@ async def top_entities(
     service: EntitiesService = Depends(entities_service),
 ) -> TopEntitiesResponse:
     return await service.top(etype=etype, size=size)
+
+
+@router.get("/suggest")
+async def suggest(
+    q: str = Query(..., min_length=1, max_length=64),
+    size: int = Query(10, ge=1, le=20),
+    service: EntitiesService = Depends(entities_service),
+) -> list[str]:
+    return await service.suggest(q=q, size=size)

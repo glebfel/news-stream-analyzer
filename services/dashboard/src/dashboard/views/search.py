@@ -2,6 +2,7 @@ from datetime import datetime
 from typing import Any
 
 import streamlit as st
+from streamlit_searchbox import st_searchbox
 
 from dashboard.services.api_client import ApiClient
 
@@ -15,7 +16,13 @@ SOURCE_LABELS: dict[str | None, str] = {
 def render(api: ApiClient) -> None:
     col_q, col_src = st.columns([3, 1])
     with col_q:
-        q = st.text_input("Поисковый запрос", value="Москва")
+        q = st_searchbox(
+            search_function=lambda term: api.suggest(term, size=10) if term else [],
+            placeholder="Начните вводить — появятся подсказки по сущностям",
+            label="Поисковый запрос",
+            default="Москва",
+            key="search_query",
+        )
     with col_src:
         src = st.selectbox(
             "Источник",

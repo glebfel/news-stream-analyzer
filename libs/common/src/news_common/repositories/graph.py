@@ -5,7 +5,11 @@ DEFAULT_DECAY = 0.95
 REL_TYPE = "MENTIONED_WITH"
 
 
-def entity_key(text: str, etype: str) -> str:
+def entity_key(text: str, etype: str, wikidata_id: str | None = None) -> str:
+    # Prefer wikidata_id when present so different surface forms ("Путин",
+    # "Владимир Путин") collapse into a single graph node.
+    if wikidata_id:
+        return f"{etype}::wd:{wikidata_id}"
     return f"{etype}::{text.lower()}"
 
 

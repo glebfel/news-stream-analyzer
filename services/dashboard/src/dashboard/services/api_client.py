@@ -25,3 +25,9 @@ class ApiClient:
 
     def subgraph(self, entity: str, limit: int = 80) -> dict[str, Any]:
         return self.get("/graph/subgraph", entity=entity, limit=limit)
+
+    def suggest(self, q: str, size: int = 10) -> list[str]:
+        with httpx.Client(timeout=self._timeout) as client:
+            resp = client.get(f"{self._base}/suggest", params={"q": q, "size": size})
+            resp.raise_for_status()
+            return resp.json()
