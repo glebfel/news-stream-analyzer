@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Any
 
-import aiohttp
+import httpx
 from news_common import get_logger
 from news_common.models import RawPost, Source
 from tenacity import (
@@ -31,16 +31,16 @@ log = get_logger("vk_collector.client")
 class VKApiClient:
     def __init__(self, tokens: TokenPool, rate_per_second: float = 3.0) -> None:
         self._tokens = tokens
-        self._session: aiohttp.ClientSession | None = None
+        self._client: httpx.AsyncClient | None = None
         self._limiter = AsyncRateLimiter(rate_per_second)
 
     async def __aenter__(self) -> "VKApiClient":
-        self._session = aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=30, connect=10))
+        self._client = httpx.AsyncClient(timeout=httpx.Timeout(30.0, connect=10.0))
         return self
 
     async def __aexit__(self, *args: object) -> None:
-        if self._session:
-            await self._session.close()
+        if self._client:
+            await self._client.aclose()
 
     async def wall_get(self, domain: str, count: int = 50) -> list[RawPost]:
         params = {"domain": domain, "count": count}
@@ -49,11 +49,9 @@ class VKApiClient:
         return [self._to_post(item, domain) for item in items if item.get("text")]
 
     async def wall_get_many(self, domains: list[str], count: int = 50) -> dict[str, list[RawPost]]:
-        """Fetch wall posts for multiple domains using `execute` batching.
-
-        VK's `execute` method runs up to 25 nested API calls in a single request,
-        consuming one quota unit per execute (vs N units for naive looping).
-        """
+        # `execute` runs up to 25 nested API calls per HTTP request, consuming
+        # one quota unit instead of N — the only path to fit hundreds of
+        # communities into the daily 5 000-call budget.
         result: dict[str, list[RawPost]] = {}
         for chunk_start in range(0, len(domains), EXECUTE_BATCH_LIMIT):
             chunk = domains[chunk_start : chunk_start + EXECUTE_BATCH_LIMIT]
@@ -70,9 +68,7 @@ class VKApiClient:
 
     async def _call(self, method: str, params: dict[str, Any]) -> dict[str, Any]:
         async for attempt in AsyncRetrying(
-            retry=retry_if_exception_type(
-                (VKRateLimitError, VKTransientError, aiohttp.ClientError)
-            ),
+            retry=retry_if_exception_type((VKRateLimitError, VKTransientError, httpx.RequestError)),
             wait=wait_exponential(multiplier=1, min=1, max=30),
             stop=stop_after_attempt(5),
             reraise=True,
@@ -82,14 +78,14 @@ class VKApiClient:
         raise VKError(0, "unreachable")
 
     async def _call_once(self, method: str, params: dict[str, Any]) -> dict[str, Any]:
-        assert self._session is not None
+        assert self._client is not None
         await self._limiter.acquire()
         token = await self._tokens.next()
         full_params = {**params, "access_token": token, "v": VK_API_VERSION}
-        async with self._session.get(f"{VK_API}/{method}", params=full_params) as resp:
-            if resp.status >= 500:
-                raise VKTransientError(resp.status, f"HTTP {resp.status}")
-            data = await resp.json()
+        resp = await self._client.get(f"{VK_API}/{method}", params=full_params)
+        if resp.status_code >= 500:
+            raise VKTransientError(resp.status_code, f"HTTP {resp.status_code}")
+        data = resp.json()
         if "error" in data:
             err = from_vk_response(data["error"])
             log.warning("vk_api_error", method=method, code=err.code, msg=err.message)
@@ -113,6 +109,5 @@ class VKApiClient:
 
 
 def _build_execute_code(domains: list[str], count: int) -> str:
-    """Build VKScript that calls API.wall.get for each domain and returns array of responses."""
     parts = [f'API.wall.get({{"domain": "{d}", "count": {count}}})' for d in domains]
     return f"return [{', '.join(parts)}];"

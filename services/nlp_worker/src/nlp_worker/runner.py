@@ -1,4 +1,4 @@
-import aiohttp
+import httpx
 from news_common import get_settings, setup_logging
 from news_common.clients.opensearch import make_opensearch_client
 from news_common.clients.redis_bus import StreamBus
@@ -27,7 +27,7 @@ async def main() -> None:
         settings.redis_url, ttl_seconds=settings.vk_wikidata_cache_ttl
     )
 
-    async with aiohttp.ClientSession() as http:
+    async with httpx.AsyncClient() as http:
         pipeline = NLPPipeline(
             bus=bus,
             ner=NerService(),

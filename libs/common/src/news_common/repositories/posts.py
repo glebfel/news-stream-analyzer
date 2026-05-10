@@ -31,6 +31,10 @@ class PostsRepository:
             body["query"]["bool"]["filter"] = [{"term": {"source": source}}]
         return await self._client.search(index=INDEX, body=body)
 
+    async def latest(self, size: int = 10) -> dict[str, Any]:
+        body = {"size": size, "sort": [{"posted_at": "desc"}], "query": {"match_all": {}}}
+        return await self._client.search(index=INDEX, body=body)
+
     async def stats(self) -> dict[str, Any]:
         body = {
             "size": 0,

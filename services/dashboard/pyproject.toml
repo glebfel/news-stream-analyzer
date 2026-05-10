@@ -6,6 +6,8 @@ dependencies = [
     "news-common",
     "streamlit>=1.36",
     "streamlit-searchbox>=0.1.16",
+    "streamlit-folium>=0.20",
+    "folium>=0.17",
     "plotly>=5.22",
     "pandas>=2.2",
     "httpx>=0.27",

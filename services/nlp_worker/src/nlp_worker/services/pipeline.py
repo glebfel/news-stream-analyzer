@@ -57,8 +57,11 @@ class NLPPipeline:
             t0 = time.perf_counter()
             post = NormalizedPost.model_validate(payload)
             entities = self._ner.extract(post.text_clean, post.id)
+            channel = (post.metadata or {}).get("channel")
             for ent in entities:
                 ner_entities_total.labels(entity_type=ent.type.value).inc()
+                ent.source = post.source.value
+                ent.channel = channel
             entities = await self._linker.link(entities)
 
             label, score = self._sentiment.predict(post.text_clean[:1000])

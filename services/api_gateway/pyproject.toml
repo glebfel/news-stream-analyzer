@@ -6,7 +6,7 @@ dependencies = [
     "news-common",
     "fastapi>=0.115",
     "uvicorn>=0.30",
-    "neo4j>=5.22",
+    "httpx>=0.27",
 ]
 
 [tool.uv.sources]

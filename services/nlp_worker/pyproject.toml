@@ -6,7 +6,7 @@ dependencies = [
     "news-common",
     "natasha>=1.6",
     "razdel>=0.5",
-    "aiohttp>=3.10",
+    "httpx>=0.27",
     "setuptools>=70",
 ]
 

@@ -16,18 +16,24 @@ SOURCE_LABELS: dict[str | None, str] = {
 def render(api: ApiClient) -> None:
     col_q, col_src = st.columns([3, 1])
     with col_q:
+        st.markdown("**Поисковый запрос**")
         q = st_searchbox(
             search_function=lambda term: api.suggest(term, size=10) if term else [],
             placeholder="Начните вводить — появятся подсказки по сущностям",
-            label="Поисковый запрос",
             default="Москва",
             key="search_query",
+            style_overrides={
+                "dropdown": {"width": 0, "height": 0, "fill": "transparent"},
+                "searchbox": {"optionEmpty": "hidden"},
+            },
         )
     with col_src:
+        st.markdown("**Источник**")
         src = st.selectbox(
             "Источник",
             options=[None, "vk", "telegram"],
             format_func=lambda v: SOURCE_LABELS[v],
+            label_visibility="collapsed",
         )
     if not q:
         return

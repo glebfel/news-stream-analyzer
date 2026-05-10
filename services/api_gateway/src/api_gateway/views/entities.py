@@ -31,3 +31,13 @@ async def suggest(
     service: EntitiesService = Depends(entities_service),
 ) -> list[str]:
     return await service.suggest(q=q, size=size)
+
+
+@router.get("/sankey")
+async def sankey(
+    channels: int = Query(8, ge=1, le=20),
+    per_channel: int = Query(5, ge=1, le=15),
+    etype: str | None = None,
+    service: EntitiesService = Depends(entities_service),
+) -> list[dict]:
+    return await service.sankey(channels=channels, per_channel=per_channel, etype=etype)

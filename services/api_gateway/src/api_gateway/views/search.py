@@ -15,3 +15,11 @@ async def search(
     service: SearchService = Depends(search_service),
 ) -> SearchResponse:
     return await service.search_posts(query=q, size=size, source=source)
+
+
+@router.get("/latest", response_model=SearchResponse)
+async def latest(
+    size: int = Query(10, ge=1, le=50),
+    service: SearchService = Depends(search_service),
+) -> SearchResponse:
+    return await service.latest(size=size)

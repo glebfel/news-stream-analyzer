@@ -11,3 +11,8 @@ class SearchService:
         res = await self._repo.search(query=query, size=size, source=source)
         items = [h["_source"] for h in res["hits"]["hits"]]
         return SearchResponse(total=res["hits"]["total"]["value"], items=items)
+
+    async def latest(self, size: int) -> SearchResponse:
+        res = await self._repo.latest(size=size)
+        items = [h["_source"] for h in res["hits"]["hits"]]
+        return SearchResponse(total=res["hits"]["total"]["value"], items=items)

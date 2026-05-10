@@ -36,3 +36,62 @@ class EntitiesRepository:
             "aggs": {"top": {"terms": {"field": "text.keyword", "size": size}}},
         }
         return await self._client.search(index=INDEX, body=body)
+
+    async def wikidata_ids_for(
+        self, names: list[str], etype: str | None = None
+    ) -> dict[str, str | None]:
+        if not names:
+            return {}
+        body: dict[str, Any] = {
+            "size": 0,
+            "query": {
+                "bool": {
+                    "must": [
+                        {"terms": {"text.keyword": names}},
+                        {"exists": {"field": "wikidata_id"}},
+                    ]
+                }
+            },
+            "aggs": {
+                "by_text": {
+                    "terms": {"field": "text.keyword", "size": len(names)},
+                    "aggs": {
+                        "sample": {
+                            "top_hits": {"size": 1, "_source": {"includes": ["wikidata_id"]}}
+                        }
+                    },
+                }
+            },
+        }
+        if etype:
+            body["query"]["bool"]["must"].append({"term": {"type": etype}})
+        res = await self._client.search(index=INDEX, body=body)
+        out: dict[str, str | None] = {n: None for n in names}
+        for bucket in res["aggregations"]["by_text"]["buckets"]:
+            hits = bucket["sample"]["hits"]["hits"]
+            if hits:
+                out[bucket["key"]] = hits[0]["_source"].get("wikidata_id")
+        return out
+
+    async def by_channel(
+        self, channels: int = 8, per_channel: int = 5, etype: str | None = None
+    ) -> dict[str, Any]:
+        body: dict[str, Any] = {
+            "size": 0,
+            "query": {"exists": {"field": "channel"}},
+            "aggs": {
+                "channels": {
+                    "terms": {"field": "channel.keyword", "size": channels},
+                    "aggs": {
+                        "top": {"terms": {"field": "text.keyword", "size": per_channel}},
+                    },
+                }
+            },
+        }
+        if etype:
+            body["query"] = {
+                "bool": {
+                    "must": [{"exists": {"field": "channel"}}, {"term": {"type": etype}}],
+                }
+            }
+        return await self._client.search(index=INDEX, body=body)

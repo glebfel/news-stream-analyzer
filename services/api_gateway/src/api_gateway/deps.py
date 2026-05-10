@@ -4,6 +4,7 @@ from news_common.repositories.graph import GraphRepository
 
 from api_gateway.services.entities import EntitiesService
 from api_gateway.services.graph import GraphService
+from api_gateway.services.locations import LocationsService
 from api_gateway.services.search import SearchService
 from api_gateway.services.stats import StatsService
 
@@ -25,3 +26,7 @@ def entities_service(request: Request) -> EntitiesService:
 def graph_service(request: Request) -> GraphService:
     repo: GraphRepository = request.app.state.graph_repo
     return GraphService(repo)
+
+
+def locations_service(request: Request) -> LocationsService:
+    return request.app.state.locations_service

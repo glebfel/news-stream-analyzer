@@ -10,7 +10,7 @@ services:
       retries: 10
 
   opensearch:
-    image: opensearchproject/opensearch:2.15.0
+    image: opensearchproject/opensearch:2.18.0
     environment:
       - discovery.type=single-node
       - bootstrap.memory_lock=true
@@ -29,7 +29,7 @@ services:
       retries: 20
 
   opensearch-dashboards:
-    image: opensearchproject/opensearch-dashboards:2.15.0
+    image: opensearchproject/opensearch-dashboards:2.18.0
     environment:
       - OPENSEARCH_HOSTS=http://opensearch:9200
       - DISABLE_SECURITY_DASHBOARDS_PLUGIN=true
@@ -38,7 +38,7 @@ services:
       opensearch: { condition: service_healthy }
 
   neo4j:
-    image: neo4j:5.22-community
+    image: neo4j:5.26-community
     environment:
       - NEO4J_AUTH=neo4j/neopassword123
       - NEO4J_PLUGINS=["apoc"]
@@ -124,7 +124,7 @@ services:
     restart: unless-stopped
 
   grafana:
-    image: grafana/grafana:11.2.0
+    image: grafana/grafana:11.4.0
     environment:
       - GF_SECURITY_ADMIN_PASSWORD=admin
       - GF_AUTH_ANONYMOUS_ENABLED=true

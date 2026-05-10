@@ -20,3 +20,13 @@ class EntitiesService:
         res = await self._repo.suggest(prefix=q, size=size)
         buckets = res["aggregations"]["top"]["buckets"]
         return [b["key"] for b in buckets]
+
+    async def sankey(
+        self, channels: int, per_channel: int, etype: str | None
+    ) -> list[dict[str, object]]:
+        res = await self._repo.by_channel(channels=channels, per_channel=per_channel, etype=etype)
+        out: list[dict[str, object]] = []
+        for ch in res["aggregations"]["channels"]["buckets"]:
+            for ent in ch["top"]["buckets"]:
+                out.append({"channel": ch["key"], "entity": ent["key"], "count": ent["doc_count"]})
+        return out

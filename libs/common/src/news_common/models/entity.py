@@ -19,3 +19,5 @@ class Entity(BaseModel):
     span_end: int
     wikidata_id: str | None = None
     confidence: float = 1.0
+    source: str | None = None
+    channel: str | None = None

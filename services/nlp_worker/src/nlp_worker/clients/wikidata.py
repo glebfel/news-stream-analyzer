@@ -1,6 +1,6 @@
 from typing import Any
 
-import aiohttp
+import httpx
 from news_common.metrics import wikidata_cache_hits_total, wikidata_cache_misses_total
 
 from nlp_worker.clients.wikidata_cache import WikidataRedisCache
@@ -13,10 +13,8 @@ USER_AGENT = (
 
 
 class WikidataClient:
-    def __init__(
-        self, session: aiohttp.ClientSession, cache: WikidataRedisCache | None = None
-    ) -> None:
-        self._session = session
+    def __init__(self, client: httpx.AsyncClient, cache: WikidataRedisCache | None = None) -> None:
+        self._client = client
         self._cache = cache
 
     async def search(self, text: str) -> str | None:
@@ -42,13 +40,13 @@ class WikidataClient:
             "limit": 1,
         }
         try:
-            async with self._session.get(
+            resp = await self._client.get(
                 WIKIDATA_API,
                 params=params,
                 headers={"User-Agent": USER_AGENT},
-                timeout=aiohttp.ClientTimeout(total=5),
-            ) as resp:
-                data = await resp.json()
+                timeout=5,
+            )
+            data = resp.json()
         except Exception:
             return None
         results = data.get("search", [])
