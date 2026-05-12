@@ -44,7 +44,7 @@ class PostsRepository:
                     "date_histogram": {
                         "field": "posted_at",
                         "calendar_interval": "day",
-                        "time_zone": "Europe/Moscow",
+                        "time_zone": "+03:00",
                     }
                 },
             },
